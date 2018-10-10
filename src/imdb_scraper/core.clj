@@ -2,13 +2,17 @@
   (:require [clojure.string :as str])
   (:import [org.jsoup Jsoup]))
 
-(defonce page (-> "https://www.imdb.com/chart/top"
-                  Jsoup/connect
-                  (.timeout 60000)
-                  (.maxBodySize (* 10 1024 1024))
-                  .get))
+(defn get-page [url & opts]
+  (let [connection (Jsoup/connect url)
+        timeout (or (:timeout (first opts)) 1000) ; alternativa: (get (first opts) :timeout 1000)
+        max-body-size (or (:max-body-size (first opts)) (* 10 1024 1024))]
+    (.timeout connection timeout)
+    (.maxBodySize connection max-body-size)
+    (.get connection)))
 
-(def table  (first (.select page "table")))
+(defonce page (get-page "https://www.imdb.com/chart/top" {:timeout 60000}))
+
+(def table (first (.select page "table")))
 
 (def table-rows (.select table "tr"))
 
@@ -29,4 +33,5 @@
 
 (filter #(str/includes? (:title %) "Pirata") movies)
 
-(clojure.pprint/print-table movies)
+;(clojure.pprint/print-table movies)
+;(clojure.inspector/inspect-table movies)
